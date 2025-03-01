@@ -1,67 +1,66 @@
 import streamlit as st
 import requests
 
-# FastAPI endpoint
 API_URL = "http://127.0.0.1:8000/predict"
 
 # Title
 st.title("🚗 Car Price Prediction")
-st.markdown("### Enter the details of the car to estimate its price.")
+st.markdown("### Enter car details to estimate its price.")
 
 # Car Model
-model = st.selectbox("Select Car Model", ["Toyota", "Mercedes-Benz", "Kia", "Nissan", "Hyundai"])
+model = st.selectbox("Select Car Model", ["Kia", "Mercedes-Benz", "Nissan", "Toyota"])
 
 # Year
 year = st.number_input("Year of Manufacture", min_value=1987, max_value=2025, step=1, value=2018)
 
 # Motor Type
-motor_type = st.selectbox("Select Motor Type", ["Petrol", "Gas", "Diesel", "Electric"])
+motor_type = st.selectbox("Select Motor Type", ["Petrol", "Diesel", "Hybrid", "Electric"])
 
-# Running (Distance Covered)
+# Running Distance
 running = st.number_input("Mileage/Running Distance", min_value=0, step=5000, value=50000)
 unit = st.selectbox("Unit", ["km", "miles"])
-
-# Convert miles to km if necessary
-if unit == "miles":
-    running = running * 1.609
+running_text = f"{running} {unit}"
 
 # Wheel Position
 wheel = st.selectbox("Wheel Position", ["Left", "Right"])
 
 # Car Color
-color = st.selectbox("Select Car Color", ["Black", "White", "Silver", "Blue", "Gray", "Other"])
+color = st.selectbox(
+    "Select Car Color",
+    ["Black", "White", "Silver", "Skyblue", "Golden", "Blue", "Brown", "Cherry", "Clove", "Gray",
+     "Green", "Orange", "Other", "Pink", "Purple", "Red"]
+)
 
 # Car Type
-car_type = st.selectbox("Select Car Type", ["Sedan", "SUV", "Minivan / Minibus", "Pickup", "Universal"])
+car_type = st.selectbox("Select Car Type", ["Sedan", "SUV", "Universal", "Hatchback", "Minivan / Minibus", "Pickup"])
 
-# Car Status (Condition)
-status = st.selectbox("Select Car Condition", ["Excellent", "Good", "Normal", "Crashed"])
+# Car Status
+status = st.selectbox("Select Car Condition", ["Excellent", "Good", "Normal", "Bad", "Very Bad"])
 
 # Motor Volume
-motor_volume = st.number_input("Enter Motor Volume (e.g., 2.0, 3.2)", min_value=0.5, max_value=6.0, step=0.1, value=2.0)
+motor_volume = st.number_input("Motor Volume (Liters)", min_value=0.5, max_value=6.0, step=0.1, value=2.0)
 
 # Prediction Button
-if st.button("Predict Price 💰"):
-    # Prepare data for API request
+if st.button("Predict Price"):
     input_data = {
-        "model": model,
+        "model": model.lower(),  # Convert to lowercase to match API
         "year": year,
-        "motor_type": motor_type,
-        "running": running,
+        "motor_type": motor_type.lower(),
+        "running": running_text,
         "wheel": wheel.lower(),
-        "color": color,
-        "type": car_type,
-        "status": status,
-        "motor_volume": motor_volume
+        "color": color.lower(),
+        "type": car_type.lower(),
+        "status": status.lower(),
+        "motor_volume": motor_volume,
     }
 
-    # Call FastAPI endpoint
     try:
         response = requests.post(API_URL, json=input_data)
-        if response.status_code == 200:
-            predicted_price = response.json()["price"]
-            st.success(f"💰 Predicted Car Price: ${predicted_price:,.2f}")
+        result = response.json()
+
+        if "predicted_price" in result:
+            st.success(f"🚘 Estimated Price: ${result['predicted_price']:,.2f}")
         else:
-            st.error("Error: Unable to fetch prediction from API.")
+            st.error(result["error"])
     except requests.exceptions.RequestException as e:
-        st.error(f"Error connecting to API: {e}")
+        st.error(f"❌ API request failed: {e}")
